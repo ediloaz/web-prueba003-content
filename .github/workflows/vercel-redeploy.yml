@@ -1,0 +1,28 @@
+name: Vercel Redeploy
+
+# Dispara un rebuild en Vercel del proyecto del Repo A cuando se commitea
+# contenido a la rama main de este Repo B (ver spec §5.2).
+#
+# Requiere: GitHub → Settings → Secrets and variables → Actions
+#           → VERCEL_DEPLOY_HOOK_URL
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Deploy Hook
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL is not set; skipping redeploy."
+            exit 0
+          fi
+          response=$(curl -fsSL -X POST "$VERCEL_DEPLOY_HOOK_URL" -o /tmp/resp.json -w "%{http_code}")
+          echo "HTTP $response"
+          cat /tmp/resp.json || true

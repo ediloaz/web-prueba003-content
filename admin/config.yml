@@ -1,0 +1,376 @@
+# Sveltia / Decap CMS — config alterna (la principal vive embebida en /admin del Repo A).
+# Esta versión está acá para que cualquier herramienta que consuma config.yml
+# (por ej. Decap CMS local) pueda leerla.
+
+backend:
+  name: github
+  repo: ediloaz/boilerplate-content
+  branch: main
+  base_url: https://sveltia-auth.workers.dev
+  auth_endpoint: auth
+
+publish_mode: simple
+locale: es
+media_folder: public/content-uploads
+public_folder: /content-uploads
+
+collections:
+  - name: settings
+    label: 'Configuración'
+    icon: settings
+    description: 'Ajustes globales del sitio (marca, módulos y contacto).'
+    files:
+      - name: general-settings
+        label: 'Configuraciones generales'
+        file: settings/general-settings.md
+        fields:
+          - { name: brandName, label: 'Nombre comercial', widget: string }
+          - { name: tagline, label: 'Lema', widget: string }
+          - { name: description, label: 'Descripción', widget: text }
+          - { name: primaryColor, label: 'Color primario', widget: string }
+          - { name: secondaryColor, label: 'Color secundario', widget: string }
+          - { name: darkModeEnabled, label: 'Modo oscuro activado', widget: boolean, required: false }
+      - name: modules-settings
+        label: 'Activación de módulos'
+        file: settings/modules-settings.md
+        fields:
+          - { name: home, label: 'Inicio (siempre activo)', widget: boolean, required: false, default: true }
+          - { name: about, label: 'Nosotros', widget: boolean, required: false }
+          - { name: services, label: 'Servicios', widget: boolean, required: false }
+          - { name: products, label: 'Productos', widget: boolean, required: false }
+          - { name: portfolio, label: 'Portafolio', widget: boolean, required: false }
+          - { name: gallery, label: 'Galería', widget: boolean, required: false }
+          - { name: promotions, label: 'Promociones', widget: boolean, required: false }
+          - { name: blog, label: 'Blog', widget: boolean, required: false }
+          - { name: testimonials, label: 'Testimonios', widget: boolean, required: false }
+          - { name: faq, label: 'Preguntas frecuentes', widget: boolean, required: false }
+          - { name: contact, label: 'Contacto', widget: boolean, required: false }
+      - name: contact-settings
+        label: 'Datos de contacto'
+        file: settings/contact-settings.md
+        fields:
+          - { name: whatsappNumber, label: 'WhatsApp', widget: string, required: false }
+          - { name: whatsappMessage, label: 'Mensaje WhatsApp', widget: string, required: false }
+          - { name: email, label: 'Correo', widget: string, required: false }
+
+  - name: pageHome
+    label: 'Página de Inicio'
+    icon: home
+    description: 'Contenido de la página principal.'
+    files:
+      - name: home
+        label: 'Inicio'
+        file: pages/home.md
+        fields:
+          - { name: heroTitle, label: 'Título hero', widget: string }
+          - { name: heroSubtitle, label: 'Subtítulo hero', widget: text, required: false }
+          - {
+              name: testimonialsDisplayMode,
+              label: 'Testimonios — modo de visualización',
+              widget: select,
+              options: [grid, carousel],
+              default: grid,
+              required: false,
+            }
+
+  - name: pageAbout
+    label: 'Página de Nosotros'
+    icon: groups
+    description: 'Contenido de la página de nosotros.'
+    files:
+      - name: about
+        label: 'Nosotros'
+        file: pages/about.md
+        fields:
+          - { name: heroTitle, label: 'Título', widget: string }
+          - { name: heroSubtitle, label: 'Subtítulo', widget: string, required: false }
+          - { name: storyTitle, label: 'Título historia', widget: string, required: false }
+          - { name: storyContent, label: 'Historia', widget: markdown }
+          - { name: mission, label: 'Misión', widget: text, required: false }
+          - { name: vision, label: 'Visión', widget: text, required: false }
+
+  - name: pageContact
+    label: 'Página de Contacto'
+    icon: contact_phone
+    description: 'Contenido de la página de contacto.'
+    files:
+      - name: contact
+        label: 'Contacto'
+        file: pages/contact.md
+        fields:
+          - { name: heroTitle, label: 'Título', widget: string }
+          - { name: heroSubtitle, label: 'Subtítulo', widget: string, required: false }
+          - { name: formTitle, label: 'Título formulario', widget: string }
+          - { name: formSuccessMessage, label: 'Mensaje éxito', widget: text }
+          - { name: showMap, label: 'Mostrar mapa', widget: boolean, required: false }
+
+  - name: pageServices
+    label: 'Página de Servicios'
+    icon: design_services
+    description: 'Encabezado y mensajes de la página de listado de servicios.'
+    files:
+      - name: services-page
+        label: 'Servicios'
+        file: pages/services-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pageProducts
+    label: 'Página de Productos'
+    icon: inventory_2
+    description: 'Encabezado y mensajes de la página de listado de productos.'
+    files:
+      - name: products-page
+        label: 'Productos'
+        file: pages/products-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pageBlog
+    label: 'Página de Blog'
+    icon: article
+    description: 'Encabezado y mensajes de la página de listado del blog.'
+    files:
+      - name: blog-page
+        label: 'Blog'
+        file: pages/blog-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pageFaq
+    label: 'Página de FAQs'
+    icon: quiz
+    description: 'Encabezado y mensajes de la página de preguntas frecuentes.'
+    files:
+      - name: faq-page
+        label: 'Preguntas frecuentes'
+        file: pages/faq-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pageTestimonials
+    label: 'Página de Testimonios'
+    icon: reviews
+    description: 'Encabezado y mensajes de la página de testimonios.'
+    files:
+      - name: testimonials-page
+        label: 'Testimonios'
+        file: pages/testimonials-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pagePortfolio
+    label: 'Página de Portafolio'
+    icon: work
+    description: 'Encabezado y mensajes de la página de portafolio.'
+    files:
+      - name: portfolio-page
+        label: 'Portafolio'
+        file: pages/portfolio-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pageGallery
+    label: 'Página de Galería'
+    icon: photo_library
+    description: 'Encabezado y mensajes de la página de galería.'
+    files:
+      - name: gallery-page
+        label: 'Galería'
+        file: pages/gallery-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: pagePromotions
+    label: 'Página de Promociones'
+    icon: local_offer
+    description: 'Encabezado y mensajes de la página de promociones.'
+    files:
+      - name: promotions-page
+        label: 'Promociones'
+        file: pages/promotions-page.md
+        fields:
+          - { name: title, label: 'Título', widget: string }
+          - { name: subtitle, label: 'Leyenda (debajo del título)', widget: text, required: false }
+          - { name: description, label: 'Descripción de la página', widget: text, required: false }
+          - { name: emptyMessage, label: 'Mensaje cuando no hay registros', widget: text, required: false }
+
+  - name: services
+    label: 'Lista de servicios'
+    label_singular: 'Servicio'
+    icon: design_services
+    description: 'Entradas del catálogo de servicios.'
+    folder: services
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, widget: string }
+      - { name: icon, widget: string, required: false }
+      - { name: summary, widget: text }
+      - { name: coverImage, widget: image, required: false }
+      - { name: order, widget: number, required: false }
+      - { name: featured, widget: boolean, required: false }
+      - { name: body, label: 'Contenido', widget: markdown }
+
+  - name: products
+    label: 'Lista de productos'
+    label_singular: 'Producto'
+    icon: inventory_2
+    description: 'Entradas del catálogo de productos.'
+    folder: products
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, widget: string }
+      - { name: mainImage, widget: image, required: false }
+      - { name: price, widget: number, required: false, value_type: float }
+      - { name: priceDisplay, widget: select, options: [show, hide, on-request], default: show }
+      - { name: shortDescription, widget: text }
+      - { name: category, widget: string, required: false }
+      - { name: sku, widget: string, required: false }
+      - { name: inStock, widget: boolean, default: true }
+      - { name: order, widget: number, required: false }
+      - { name: whatsappMessage, widget: string, required: false }
+      - { name: body, label: 'Contenido', widget: markdown }
+
+  - name: posts
+    label: 'Artículos del blog'
+    label_singular: 'Artículo'
+    icon: article
+    description: 'Publicaciones del blog.'
+    folder: posts
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, widget: string }
+      - { name: publishedAt, widget: datetime }
+      - { name: status, widget: select, options: [draft, published], default: published }
+      - { name: excerpt, widget: text }
+      - { name: category, widget: string, required: false }
+      - { name: coverImage, widget: image, required: false }
+      - { name: body, label: 'Contenido', widget: markdown }
+
+  - name: faqs
+    label: 'Lista de preguntas frecuentes'
+    label_singular: 'Pregunta frecuente'
+    icon: quiz
+    description: 'Preguntas y respuestas para la sección FAQ.'
+    folder: faqs
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: question, widget: string }
+      - { name: category, widget: string, required: false }
+      - { name: order, widget: number, required: false }
+      - { name: featured, widget: boolean, required: false }
+      - { name: body, label: 'Respuesta', widget: markdown }
+
+  - name: testimonials
+    label: 'Lista de testimonios'
+    label_singular: 'Testimonio'
+    icon: reviews
+    description: 'Opiniones y reseñas de clientes.'
+    folder: testimonials
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: name, label: 'Nombre de la persona', widget: string }
+      - { name: photo, label: 'Foto de la persona', widget: image, required: false }
+      - {
+          name: rating,
+          label: 'Calificación (1-5)',
+          widget: number,
+          value_type: int,
+          min: 1,
+          max: 5,
+          default: 5,
+        }
+      - {
+          name: order,
+          label: Orden,
+          widget: number,
+          required: false,
+          hint: 'En interfaz se muestran máximo 20 testimonios.',
+        }
+      - { name: facebookUrl, label: 'Facebook (opcional)', widget: string, required: false }
+      - { name: instagramUrl, label: 'Instagram (opcional)', widget: string, required: false }
+      - { name: linkedinUrl, label: 'LinkedIn (opcional)', widget: string, required: false }
+      - { name: tiktokUrl, label: 'TikTok (opcional)', widget: string, required: false }
+      - { name: youtubeUrl, label: 'YouTube (opcional)', widget: string, required: false }
+      - { name: websiteUrl, label: 'Sitio web (opcional)', widget: string, required: false }
+      - { name: body, label: 'Texto del testimonio', widget: markdown }
+
+  - name: portfolio
+    label: 'Lista de Portafolio'
+    label_singular: 'Proyecto'
+    icon: work
+    description: 'Casos y trabajos del portafolio.'
+    folder: portfolio
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, label: 'Título del proyecto', widget: string }
+      - { name: coverImage, label: 'Imagen principal', widget: image, required: false }
+      - { name: summary, label: Resumen, widget: text }
+      - { name: category, label: Categoría, widget: string, required: false }
+      - { name: clientName, label: Cliente, widget: string, required: false }
+      - { name: projectUrl, label: 'URL del proyecto', widget: string, required: false }
+      - { name: completedAt, label: 'Fecha de finalización', widget: string, required: false }
+      - { name: featured, label: Destacado, widget: boolean, required: false }
+      - { name: order, label: Orden, widget: number, required: false }
+      - { name: body, label: 'Detalle del proyecto', widget: markdown }
+
+  - name: gallery
+    label: 'Lista de Galería'
+    label_singular: 'Imagen'
+    icon: photo_library
+    description: 'Imágenes para la galería pública.'
+    folder: gallery
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, label: Título, widget: string }
+      - { name: image, label: Imagen, widget: image }
+      - { name: alt, label: 'Texto alternativo (SEO)', widget: string }
+      - { name: category, label: Categoría, widget: string, required: false }
+      - { name: order, label: Orden, widget: number, required: false }
+
+  - name: promotions
+    label: 'Lista de promociones'
+    label_singular: 'Promoción'
+    icon: local_offer
+    description: 'Promociones y ofertas activas.'
+    folder: promotions
+    create: true
+    slug: '{{slug}}-{{year}}{{month}}{{day}}{{hour}}{{minute}}{{second}}'
+    fields:
+      - { name: title, label: Título, widget: string }
+      - { name: description, label: Descripción, widget: text }
+      - { name: badge, label: 'Etiqueta (opcional)', widget: string, required: false }
+      - { name: image, label: Imagen, widget: image, required: false }
+      - { name: ctaLabel, label: 'Texto del botón', widget: string, required: false }
+      - { name: ctaHref, label: 'Link del botón', widget: string, required: false }
+      - { name: validUntil, label: 'Vigencia (texto)', widget: string, required: false }
+      - { name: featured, label: Destacada, widget: boolean, required: false }
+      - { name: order, label: Orden, widget: number, required: false }

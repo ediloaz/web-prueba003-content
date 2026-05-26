@@ -1,0 +1,102 @@
+# ============================================================
+# 🕒 PERIODICIDAD DE LIMPIEZA — editá esta línea para cambiarla
+# ============================================================
+# Sintaxis: cron de GitHub Actions (UTC).
+#   Semanal domingo 06:00 UTC (default):  '0 6 * * 0'
+#   Diaria 06:00 UTC:                     '0 6 * * *'
+#   Cada 15 días domingo 06:00 UTC:       '0 6 1-7,15-21 * 0'
+#   Mensual día 1 a las 06:00 UTC:        '0 6 1 * *'
+# Validador online: https://crontab.guru
+# ============================================================
+
+name: History Cleanup (Repo B)
+
+# Reescribe el historial para purgar blobs huérfanos en public/content-uploads/
+# (spec §17.6). REGLA INQUEBRANTABLE: nunca toca archivos presentes en HEAD.
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'   # ← EDITAR ACÁ para cambiar frecuencia
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Install git-filter-repo
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y git-filter-repo
+
+      - name: Record size before
+        id: before
+        run: |
+          BEFORE=$(git count-objects -vH | tee /tmp/before.txt | grep -E '^size-pack:' | sed 's/^size-pack:[[:space:]]*//')
+          echo "Before: $BEFORE"
+          echo "size=$BEFORE" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Tamaño antes"
+            echo '```'
+            cat /tmp/before.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compute orphan paths
+        id: orphans
+        shell: bash
+        run: |
+          set -euo pipefail
+          # All historical paths under public/content-uploads/
+          git log --all --pretty=format: --name-only --diff-filter=AMR -- 'public/content-uploads/' \
+            | sort -u | grep -v '^$' > /tmp/historic.txt || true
+          # Current HEAD paths under same
+          git ls-files HEAD -- 'public/content-uploads/' > /tmp/current.txt || true
+          # Orphans = in historic but not in current
+          comm -23 /tmp/historic.txt /tmp/current.txt > /tmp/orphans.txt || true
+          ORPHAN_COUNT=$(wc -l < /tmp/orphans.txt || echo 0)
+          echo "orphan_count=$ORPHAN_COUNT" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Blobs huérfanos a purgar: $ORPHAN_COUNT"
+            if [ "$ORPHAN_COUNT" -gt 0 ]; then
+              echo '```'
+              head -100 /tmp/orphans.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Purge orphan blobs
+        if: ${{ steps.orphans.outputs.orphan_count != '0' }}
+        run: |
+          set -euo pipefail
+          # Pasamos cada path con --invert-paths para purgarlo del historial.
+          ARGS=()
+          while IFS= read -r p; do
+            [ -z "$p" ] && continue
+            ARGS+=(--path "$p")
+          done < /tmp/orphans.txt
+          ARGS+=(--invert-paths --force)
+          git filter-repo "${ARGS[@]}"
+
+      - name: Push rewritten history
+        if: ${{ steps.orphans.outputs.orphan_count != '0' }}
+        run: |
+          git push --force origin HEAD:main
+
+      - name: Record size after
+        if: ${{ steps.orphans.outputs.orphan_count != '0' }}
+        run: |
+          AFTER=$(git count-objects -vH | tee /tmp/after.txt | grep -E '^size-pack:' | sed 's/^size-pack:[[:space:]]*//')
+          {
+            echo "### Tamaño después"
+            echo '```'
+            cat /tmp/after.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

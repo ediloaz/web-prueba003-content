@@ -1,0 +1,107 @@
+name: Storage Report
+
+# Genera STORAGE.md semanal con tamaños y semáforo (spec §17.4.1).
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'   # domingos 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Compute report
+        id: compute
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Size of public/content-uploads (working tree)
+          if [ -d public/content-uploads ]; then
+            UPLOADS_BYTES=$(du -sb public/content-uploads | awk '{print $1}')
+          else
+            UPLOADS_BYTES=0
+          fi
+          UPLOADS_MB=$(awk -v b="$UPLOADS_BYTES" 'BEGIN{printf "%.2f", b/1024/1024}')
+
+          # Size of total repo via git count-objects -vH
+          PACK_LINE=$(git count-objects -vH | grep -E '^size-pack:' || true)
+          PACK_VALUE=$(echo "$PACK_LINE" | sed 's/^size-pack:[[:space:]]*//')
+          REPO_BYTES=$(git count-objects -v | awk -F': ' '$1=="size-pack"{print $2*1024}')
+          REPO_MB=$(awk -v b="$REPO_BYTES" 'BEGIN{printf "%.2f", b/1024/1024}')
+
+          # Semáforo uploads (árbol)
+          if [ "$UPLOADS_BYTES" -lt $((250*1024*1024)) ]; then UPLOADS_FLAG='🟢'
+          elif [ "$UPLOADS_BYTES" -lt $((500*1024*1024)) ]; then UPLOADS_FLAG='🟡'
+          else UPLOADS_FLAG='🔴'
+          fi
+
+          # Semáforo repo total
+          if [ "$REPO_BYTES" -lt $((500*1024*1024)) ]; then REPO_FLAG='🟢'
+          elif [ "$REPO_BYTES" -lt $((1024*1024*1024)) ]; then REPO_FLAG='🟡'
+          else REPO_FLAG='🔴'
+          fi
+
+          # Top 10 archivos pesados
+          if [ -d public/content-uploads ]; then
+            TOP=$(find public/content-uploads -type f -printf '%s %p\n' | sort -nr | head -n 10 \
+                | awk '{ printf "| `%s` | %.2f MB |\n", $2, $1/1024/1024 }')
+          else
+            TOP="_(sin archivos en public/content-uploads)_"
+          fi
+
+          {
+            echo "# Almacenamiento — Repo B"
+            echo
+            echo "> Generado por GitHub Actions el $(date -u +'%Y-%m-%d %H:%M UTC')."
+            echo
+            echo "## Estado"
+            echo
+            echo "| Métrica | Valor | Estado |"
+            echo "| --- | --- | --- |"
+            echo "| \`public/content-uploads/\` (árbol) | ${UPLOADS_MB} MB | ${UPLOADS_FLAG} |"
+            echo "| Tamaño total del repo (size-pack) | ${REPO_MB} MB (${PACK_VALUE:-n/a}) | ${REPO_FLAG} |"
+            echo
+            echo "## Umbrales (spec §17.4)"
+            echo
+            echo "| Métrica | 🟢 Verde | 🟡 Ámbar | 🔴 Rojo |"
+            echo "| --- | --- | --- | --- |"
+            echo "| \`public/content-uploads/\` (árbol) | < 250 MB | 250–500 MB | ≥ 500 MB |"
+            echo "| Tamaño total del repo | < 500 MB | 500 MB – 1 GB | ≥ 1 GB |"
+            echo
+            echo "## Top 10 archivos más pesados"
+            echo
+            if [ -n "$TOP" ]; then
+              echo "| Archivo | Tamaño |"
+              echo "| --- | --- |"
+              echo "$TOP"
+            else
+              echo "_Sin archivos._"
+            fi
+          } > STORAGE.md
+
+          echo "uploads_flag=$UPLOADS_FLAG" >> "$GITHUB_OUTPUT"
+          echo "repo_flag=$REPO_FLAG" >> "$GITHUB_OUTPUT"
+          echo "uploads_mb=$UPLOADS_MB" >> "$GITHUB_OUTPUT"
+          echo "repo_mb=$REPO_MB" >> "$GITHUB_OUTPUT"
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet STORAGE.md; then
+            git add STORAGE.md
+            git commit -m "chore(storage): weekly report — uploads ${{ steps.compute.outputs.uploads_mb }} MB, repo ${{ steps.compute.outputs.repo_mb }} MB"
+            git push
+          else
+            echo "No changes in STORAGE.md — skipping commit."
+          fi

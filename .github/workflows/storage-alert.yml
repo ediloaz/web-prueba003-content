@@ -1,0 +1,103 @@
+name: Storage Alert
+
+# Si las métricas de almacenamiento cruzan el umbral rojo (spec §17.4.2),
+# abre o reabre un issue de mantenimiento.
+
+on:
+  schedule:
+    - cron: '30 6 * * 0'   # domingos 06:30 UTC (30' después del storage-report)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute storage flags
+        id: compute
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d public/content-uploads ]; then
+            UPLOADS_BYTES=$(du -sb public/content-uploads | awk '{print $1}')
+          else
+            UPLOADS_BYTES=0
+          fi
+          REPO_BYTES=$(git count-objects -v | awk -F': ' '$1=="size-pack"{print $2*1024}')
+
+          NEEDS_ALERT="false"
+          REASON=""
+          if [ "$UPLOADS_BYTES" -ge $((500*1024*1024)) ]; then
+            NEEDS_ALERT="true"
+            REASON="public/content-uploads/ ≥ 500 MB (árbol de trabajo)"
+          fi
+          if [ "$REPO_BYTES" -ge $((1024*1024*1024)) ]; then
+            NEEDS_ALERT="true"
+            REASON="${REASON:+$REASON; }Repo total ≥ 1 GB (size-pack)"
+          fi
+
+          echo "needs_alert=$NEEDS_ALERT" >> "$GITHUB_OUTPUT"
+          echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+          echo "uploads_mb=$(awk -v b="$UPLOADS_BYTES" 'BEGIN{printf "%.2f", b/1024/1024}')" >> "$GITHUB_OUTPUT"
+          echo "repo_mb=$(awk -v b="$REPO_BYTES" 'BEGIN{printf "%.2f", b/1024/1024}')" >> "$GITHUB_OUTPUT"
+
+      - name: Open or reopen issue
+        if: ${{ steps.compute.outputs.needs_alert == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Mantenimiento: almacenamiento de medios';
+            const body = [
+              '⚠️ Umbral rojo cruzado.',
+              '',
+              `**Motivo:** ${{ steps.compute.outputs.reason }}`,
+              `**Uploads:** ${{ steps.compute.outputs.uploads_mb }} MB`,
+              `**Repo total:** ${{ steps.compute.outputs.repo_mb }} MB`,
+              '',
+              '### Checklist',
+              '- [ ] Revisar top 10 archivos pesados en STORAGE.md',
+              '- [ ] Evaluar compresión / reemplazo por WebP donde aplique',
+              '- [ ] Ejecutar `history-cleanup.yml` para purgar blobs huérfanos',
+              '- [ ] Si persiste: `git filter-repo` / BFG sobre paths de medios (spec §17.3)',
+              '- [ ] Si nada funciona: reinicio del Repo B (plan nuclear)'
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'storage'
+            });
+            const match = issues.find(i => i.title === title);
+
+            if (match) {
+              if (match.state === 'closed') {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: match.number,
+                  state: 'open'
+                });
+              }
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['storage']
+              });
+            }

@@ -1,0 +1,13 @@
+# Repo B (content) — public repo, no secrets allowed.
+# Aún así, no commitear sistemas de cache locales.
+
+.DS_Store
+Thumbs.db
+*.tmp
+
+# editores
+.idea
+.vscode
+
+# vercel (no debería existir aquí, pero por las dudas)
+.vercel
