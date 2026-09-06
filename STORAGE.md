@@ -1,13 +1,13 @@
 # Almacenamiento — Repo B
 
-> Generado por GitHub Actions el 2026-08-30 10:59 UTC.
+> Generado por GitHub Actions el 2026-09-06 10:01 UTC.
 
 ## Estado
 
 | Métrica | Valor | Estado |
 | --- | --- | --- |
 | `public/content-uploads/` (árbol) | 0.00 MB | 🟢 |
-| Tamaño total del repo (size-pack) | 0.03 MB (30.20 KiB) | 🟢 |
+| Tamaño total del repo (size-pack) | 0.03 MB (30.51 KiB) | 🟢 |
 
 ## Umbrales (spec §17.4)
 
